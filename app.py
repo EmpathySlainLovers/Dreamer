@@ -10,4 +10,3 @@ def main():
             print(f"Processing your request: {user_input}")
 
 if __name__ == "__main__":
-    main()
