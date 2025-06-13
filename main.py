@@ -1,13 +1,21 @@
-from fastapi import FastAPI
-import os
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.get("/")
-def read_root():
+def root():
     return {"message": "Dreamer is alive and deployed!"}
 
-# For Render compatibility
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+@app.post("/chat")
+async def chat(request: Request):
+    data = await request.json()
+    user_input = data.get("user_input", "")
+    return {"response": f"Echo: {user_input}"}
