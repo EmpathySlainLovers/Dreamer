@@ -54,9 +54,17 @@ async def chat(request: Request):
             "temperature": 0.8
         }
 
-        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
-        hf_result = response.json()
-        reply = hf_result["choices"][0]["message"]["content"]
+                response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
+        result = response.json()
+
+        if "choices" in result and len(result["choices"]) > 0:
+            reply = result["choices"][0]["message"]["content"]
+            memory_data["log"].append({"role": "assistant", "text": reply})
+            with open("memory.json", "w") as f:
+                json.dump(memory_data, f)
+        else:
+            reply = f"⚠️ OpenRouter API error: {result}"
+
 
         # Add Dreamer's reply to memory
         memory_data["log"].append({"role": "assistant", "text": reply})
