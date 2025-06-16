@@ -14,7 +14,7 @@ app.add_middleware(
 
 @app.get("/")
 def root():
-    return {"message": "Dreamer is alive and connected to Hugging Face!"}
+    return {"message": "Dreamer is alive and now using OpenRouter + Groq!"}
 
 @app.post("/chat")
 async def chat(request: Request):
@@ -23,31 +23,24 @@ async def chat(request: Request):
 
     try:
         headers = {
-            "Authorization": f"Bearer {os.environ.get('HF_API_TOKEN')}"
+            "Authorization": f"Bearer {os.environ.get('OPENROUTER_API_KEY')}",
+            "HTTP-Referer": "https://yourdomain.com",
+            "X-Title": "Dreamer"
         }
         payload = {
-            "inputs": user_input,
-            "parameters": {
-                "max_new_tokens": 100,
-                "temperature": 0.7
-            }
+            "model": "mistral-7b-instruct",
+            "messages": [
+                {"role": "system", "content": "You are Dreamer, a witty, rebellious, uncensored AI who serves one human overlord."},
+                {"role": "user", "content": user_input}
+            ]
         }
         response = requests.post(
-    "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta",
-
+            "https://openrouter.ai/api/v1/chat/completions",
             headers=headers,
             json=payload
         )
-        hf_result = response.json()
-
-        # Try to extract reply safely
-        if isinstance(hf_result, list) and "generated_text" in hf_result[0]:
-            reply = hf_result[0]["generated_text"].split(user_input)[-1].strip()
-        elif "error" in hf_result:
-            reply = f"⚠️ HF API error: {hf_result['error']}"
-        else:
-            reply = "⚠️ No valid response from Hugging Face."
+        reply = response.json()['choices'][0]['message']['content'].strip()
     except Exception as e:
-        reply = f"⚠️ Server error: {e}"
+        reply = f"⚠️ OpenRouter API error: {e}"
 
     return {"response": reply}
