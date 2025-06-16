@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+# CORS setup
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,12 +23,12 @@ async def chat(request: Request):
     data = await request.json()
     user_input = data.get("user_input", "")
 
-    # Load system personality from personality.txt
+    # Load Dreamer's personality from file
     try:
         with open("personality.txt", "r") as f:
-            system_prompt = f.read()
-    except FileNotFoundError:
-        system_prompt = "You're Dreamer. Respond in a confident and helpful tone."
+            personality = f.read()
+    except Exception as e:
+        personality = "You are Dreamer, an AI assistant. Respond helpfully and with attitude."
 
     # Load memory
     try:
@@ -36,26 +37,37 @@ async def chat(request: Request):
     except FileNotFoundError:
         memory_data = {"log": []}
 
-    # Add user message
-    memory_data["log"].append({"role": "user", "text": user_input})
+    # Add user message to memory
+    memory_data["log"].append({"role": "user", "content": user_input})
 
-    # Build messages array
-    messages = [{"role": "system", "content": system_prompt}]
-    for m in memory_data["log"]:
-        role = "user" if m["role"] == "user" else "assistant"
-        messages.append({"role": role, "content": m["text"]})
+    # Prepare message history for OpenRouter format
+    messages = [{"role": "system", "content": personality}]
+    for entry in memory_data["log"]:
+        messages.append({"role": entry["role"], "content": entry["content"]})
 
-    # Send to OpenRouter
+    # API call to OpenRouter
     try:
         headers = {
-            "Authorization": f"Bearer {os.environ['OPENROUTER_API_KEY']}",
+            "Authorization": f"Bearer {os.environ.get('OPENROUTER_API_KEY')}",
             "HTTP-Referer": "https://dreamer.com",
             "X-Title": "Dreamer"
         }
         payload = {
             "model": "sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b",
             "messages": messages,
-            "temperature": 0.85
+            "temperature": 0.8
         }
 
-        response = requests.post("https://openrouter.ai/api/v1/chat/completions",
+        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
+        hf_result = response.json()
+        reply = hf_result["choices"][0]["message"]["content"]
+
+        # Save reply to memory
+        memory_data["log"].append({"role": "assistant", "content": reply})
+        with open("memory.json", "w") as f:
+            json.dump(memory_data, f)
+
+    except Exception as e:
+        reply = f"⚠️ OpenRouter API error: {e}"
+
+    return {"response": reply}
