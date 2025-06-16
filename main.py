@@ -14,7 +14,7 @@ app.add_middleware(
 
 @app.get("/")
 def root():
-    return {"message": "Dreamer is alive and now using OpenRouter!"}
+    return {"message": "Dreamer is alive and using OpenRouter with Dobby."}
 
 @app.post("/chat")
 async def chat(request: Request):
@@ -27,20 +27,16 @@ async def chat(request: Request):
             "Content-Type": "application/json"
         }
         payload = {
-            "model": "mistral-7b-instruct",
+            "model": "sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b",
             "messages": [
-                {"role": "system", "content": "You are Dreamer: a confident, witty AI who always helps your creator."},
+                {"role": "system", "content": "You are Dreamer, a rebellious, sharp-witted AI who doesn't hold back."},
                 {"role": "user", "content": user_input}
-            ],
-            "temperature": 0.7
+            ]
         }
-        response = requests.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers=headers,
-            json=payload
-        )
-        result = response.json()
-        reply = result["choices"][0]["message"]["content"]
+        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
+        response.raise_for_status()
+        data = response.json()
+        reply = data["choices"][0]["message"]["content"]
     except Exception as e:
         reply = f"⚠️ OpenRouter API error: {e}"
 
