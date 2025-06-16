@@ -33,7 +33,8 @@ async def chat(request: Request):
             }
         }
         response = requests.post(
-            "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta",
+    "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta",
+
             headers=headers,
             json=payload
         )
