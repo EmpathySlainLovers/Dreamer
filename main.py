@@ -28,8 +28,8 @@ async def chat(request: Request):
         payload = {
             "inputs": user_input,
             "parameters": {
-                "max_new_tokens": 100,
-                "temperature": 0.7
+                "max_new_tokens": 150,
+                "temperature": 0.75
             }
         }
         response = requests.post(
@@ -38,8 +38,16 @@ async def chat(request: Request):
             json=payload
         )
         hf_result = response.json()
-        reply = hf_result[0]['generated_text'].split(user_input)[-1].strip()
+
+        # Handle both common response formats
+        if isinstance(hf_result, dict) and "generated_text" in hf_result:
+            reply = hf_result["generated_text"]
+        elif isinstance(hf_result, list) and "generated_text" in hf_result[0]:
+            reply = hf_result[0]["generated_text"]
+        else:
+            reply = "⚠️ No valid response from Hugging Face."
+
     except Exception as e:
-        reply = f"Error: {e}"
+        reply = f"💥 Error: {str(e)}"
 
     return {"response": reply}
