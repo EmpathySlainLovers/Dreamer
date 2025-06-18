@@ -3,4 +3,4 @@ requests
 python-dotenv
 fastapi
 uvicorn
-supabase
+supabase.py
